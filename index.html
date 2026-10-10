@@ -117,7 +117,6 @@ body.waiting .play{animation-play-state:paused}
 .t4{--c:color-mix(in srgb,var(--soft) 20%,var(--accent))}
 .sunkship{--c:var(--ink)}
 @keyframes shake{25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
-#gName{display:block;margin:0 auto 12px;width:min(100%,260px);padding:11px 14px;border:1.5px solid var(--soft);border-radius:12px;background:transparent;color:var(--ink);font:600 18px "Nunito",system-ui,sans-serif;text-align:center}
 .acts{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin:1.8em 0 0}
 .acts .play{margin:0}
 .top{position:fixed;inset:0;z-index:8;overflow-y:auto;background:var(--bg);color:var(--ink);text-align:center;padding:calc(56px + env(safe-area-inset-top,0px)) 16px calc(40px + env(safe-area-inset-bottom,0px))}
@@ -142,11 +141,45 @@ body.waiting .play{animation-play-state:paused}
 .pol:not(.open) .c{filter:blur(7px);opacity:.45}
 .pol:focus-visible{outline:2px solid var(--accent);outline-offset:4px}
 .thint{margin:18px 0 0;color:var(--soft);font-size:14px}
+.razon{margin:1.4em auto 0;max-width:460px;min-height:4.2em;font:italic 400 clamp(19px,5vw,24px)/1.4 "Fraunces",Georgia,serif;color:var(--ink)}
+.razon.in{animation:rise .7s cubic-bezier(.2,.7,.2,1) both}
+.lock{position:fixed;inset:0;z-index:20;display:grid;place-items:center;background:var(--bg);padding:24px 16px;overflow-y:auto}
+.lock::before{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(60% 45% at 50% 36%,var(--glow),transparent 72%)}
+.lock form{position:relative;width:min(100%,300px);text-align:center}
+.lock .h{display:block;font-size:56px;line-height:1;color:var(--accent);margin-bottom:.2em;text-shadow:0 0 .5em var(--glow);animation:beat 1s ease-in-out infinite}
+.lock h2{margin:0 0 .6em;font:italic 300 clamp(26px,7vw,34px) "Fraunces",Georgia,serif}
+.lock input{display:block;width:100%;margin:0 0 12px;padding:12px 14px;border:1.5px solid var(--soft);border-radius:12px;background:transparent;color:var(--ink);font:600 18px "Nunito",system-ui,sans-serif;text-align:center}
+.lock input:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.lock .gbtn{width:100%;padding:12px 20px;font-size:16px}
+.lock .err{min-height:1.5em;margin:12px 0 0;color:var(--accent);font-size:14px}
+.lock.out{opacity:0;pointer-events:none;transition:opacity .6s ease}
+.prize{margin:1.2em auto 0;max-width:340px;padding:18px 16px;border:1.5px solid var(--accent);border-radius:16px;background:color-mix(in srgb,var(--glow) 45%,transparent);animation:rise .8s cubic-bezier(.2,.7,.2,1) both}
+.prize p{margin:0;font-size:16px;line-height:1.5;color:var(--ink)}
+.prize .pc{margin:.3em 0 0;color:var(--accent);font:italic 300 clamp(48px,16vw,72px) "Fraunces",Georgia,serif;letter-spacing:.1em;text-shadow:0 0 .4em var(--glow)}
+.prize small{display:block;margin-top:.4em;color:var(--soft);font-size:13px}
+.cimg{display:block;width:100%;max-width:520px;height:auto;margin:20px auto 0;border-radius:6px;box-shadow:0 10px 26px rgba(0,0,0,.28),0 0 0 1px rgba(0,0,0,.05);animation:rise .9s cubic-bezier(.2,.7,.2,1) both}
+.vcode{display:block;margin:14px auto;width:11em;max-width:100%;padding:11px 14px;border:1.5px solid var(--soft);border-radius:12px;background:transparent;color:var(--ink);font:600 20px "Nunito",system-ui,sans-serif;text-align:center;text-transform:uppercase;letter-spacing:.15em}
+.vcode:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.vlist{display:grid;gap:16px;max-width:420px;margin:24px auto 0}
+.vch{position:relative;text-align:left;padding:18px 20px;border-radius:14px;border:1.5px dashed var(--accent);background:color-mix(in srgb,var(--glow) 40%,transparent);animation:rise .9s var(--dl,0s) cubic-bezier(.2,.7,.2,1) both}
+.vch .k{display:block;margin:0 0 .5em;color:var(--accent);font:600 12px "Nunito",system-ui,sans-serif;letter-spacing:.18em;text-transform:uppercase}
+.vch .t{margin:0;font:italic 400 clamp(19px,5vw,23px)/1.3 "Fraunces",Georgia,serif;color:var(--ink)}
+.vch .v{margin:.8em 0 0;font-size:13px;color:var(--soft)}
+.vch.forever{border-style:solid;box-shadow:0 0 26px var(--glow)}
 </style>
 </head>
 <body class="waiting">
 <!-- Filtro chroma key: el verde pasa a transparente. Ajustá la última fila (3.5 = dureza, 1 = tolerancia) si hace falta -->
 <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><filter id="chroma" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  3.5 -3.5 3.5 0 1"/></filter></svg>
+<div class="lock" id="lock">
+  <form id="lockForm" autocomplete="on">
+    <span class="h">&#9829;</span>
+    <input id="lUser" name="username" type="text" placeholder="Usuario" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" aria-label="Usuario">
+    <input id="lPass" name="password" type="password" placeholder="Contraseña" autocomplete="current-password" aria-label="Contraseña">
+    <button class="gbtn main" type="submit">Entrar</button>
+    <p class="err" id="lErr" role="alert" aria-live="polite"></p>
+  </form>
+</div>
 <div class="intro" id="intro">
   <div class="stage" id="stage"><div id="yt"></div></div>
   <button class="start" id="start" type="button"><span class="h">&#9829;</span>Tocá para abrir</button>
@@ -166,7 +199,11 @@ body.waiting .play{animation-play-state:paused}
   <div class="acts">
     <button class="play" id="playBtn" type="button">Jugar batalla naval</button>
     <button class="play" id="topBtn" type="button">Top 4 &#9829;</button>
+    <button class="play" id="razonBtn" type="button">Una razón &#9829;</button>
+    <button class="play" id="cartaBtn" type="button">Carta &#9829;</button>
+    <button class="play" id="vouBtn" type="button">Voucher &#9829;</button>
   </div>
+  <p class="razon" id="razon" aria-live="polite"></p>
   <p class="hint">Tocá la pantalla.</p>
 </main>
 <div class="top" id="top" hidden>
@@ -182,13 +219,36 @@ body.waiting .play{animation-play-state:paused}
   <p class="thint" id="tHint" hidden>Tocá cada polaroid para descubrirla.</p>
   <div class="pgrid" id="pgrid" hidden></div>
 </div>
+<div class="top" id="carta" hidden>
+  <button class="back" id="cBack" type="button">&larr; Volver</button>
+  <div class="gwrap">
+    <h2 class="gtitle">Carta</h2>
+    <section id="cLock">
+      <p class="gmsg" id="cMsg" aria-live="polite">Ingresá el código para abrir la carta.</p>
+      <input class="tcode" id="cCode" maxlength="4" inputmode="numeric" pattern="[0-9]*" autocomplete="off" placeholder="····" aria-label="Código de la carta">
+      <button class="gbtn main" id="cOk" type="button">Abrir</button>
+    </section>
+  </div>
+  <div id="cView" hidden></div>
+</div>
+<div class="top" id="vou" hidden>
+  <button class="back" id="vBack" type="button">&larr; Volver</button>
+  <div class="gwrap">
+    <h2 class="gtitle">Voucher</h2>
+    <section id="vLock">
+      <p class="gmsg" id="vMsg" aria-live="polite">Ingresá tu código.</p>
+      <input class="vcode" id="vCode" maxlength="12" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" placeholder="Código" aria-label="Código del voucher">
+      <button class="gbtn main" id="vOk" type="button">Canjear</button>
+    </section>
+  </div>
+  <div class="vlist" id="vList" hidden></div>
+</div>
 <div class="game" id="game" hidden>
   <button class="back" id="gBack" type="button">&larr; Volver</button>
   <div class="gwrap">
     <h2 class="gtitle">Batalla naval</h2>
     <p class="gmsg" id="gMsg" aria-live="polite"></p>
     <section id="sMenu">
-      <input id="gName" maxlength="14" placeholder="usuario" autocomplete="nickname" aria-label="Tu nombre de jugador">
       <button class="gbtn main" id="gCreate" type="button">Crear partida</button>
       <div class="join"><input id="gCode" maxlength="4" placeholder="Código" autocomplete="off" autocapitalize="characters" aria-label="Código de la partida"><button class="gbtn" id="gJoin" type="button">Unirme</button></div>
     </section>
@@ -202,7 +262,13 @@ body.waiting .play{animation-play-state:paused}
       <p class="lbl" id="lblE">Su flota</p><div class="board" id="eBoard"></div>
       <p class="lbl">Tu flota</p><div class="board small" id="oBoard"></div>
     </section>
-    <section id="sEnd" hidden><div class="row"><button class="gbtn main" id="gAgain" type="button">Jugar de nuevo</button></div></section>
+    <section id="sEnd" hidden>
+      <div class="prize" id="gPrize" hidden>
+        <p>¡Felicidades! Te ganaste un código para una carta ♥</p>
+        <p class="pc" id="gPrizeCode"></p>
+        <small>Usalo en el botón “Carta” de la pantalla de inicio.</small>
+      </div>
+      <div class="row"><button class="gbtn main" id="gAgain" type="button">Jugar de nuevo</button></div></section>
   </div>
 </div>
 <script>
@@ -316,7 +382,7 @@ body.waiting .play{animation-play-state:paused}
   var peer = null, conn = null, isHost = false;
   var FALLBACK = "la otra persona", foe = FALLBACK, myName = "";
   function cleanName(n) { return String(n || "").replace(/[\u0000-\u001f<>]/g, "").trim().slice(0, 14); }
-  function useName() { myName = cleanName($("gName").value); try { localStorage.setItem("m16name", myName); } catch (e) {} }
+  function useName() { myName = cleanName(window.M16_USER); }
   var my, ships, shotsAtMe, enemy, locked, myReady, enReady, myTurn, over;
   var rand = function (k) { return Math.floor(Math.random() * k); };
   var mk = function (v) { var a = []; for (var i = 0; i < N; i++) { a.push([]); for (var j = 0; j < N; j++) a[i].push(v); } return a; };
@@ -460,6 +526,8 @@ body.waiting .play{animation-play-state:paused}
   function end(win) {
     over = true; myTurn = false;
     say(win ? "¡Ganaste" + (myName ? ", " + myName : "") + "! ♥" : "Esta vez ganó " + foe + ". ¡Revancha!");
+    $("gPrize").hidden = !win;
+    if (win) $("gPrizeCode").textContent = window.M16_CARTA_CODE || "";
     $("sEnd").hidden = false;
   }
   function onData(m) {
@@ -547,7 +615,6 @@ body.waiting .play{animation-play-state:paused}
     });
   }
 
-  try { $("gName").value = localStorage.getItem("m16name") || ""; } catch (e) {}
   // La sección "top 4" va en el script siguiente
   $("playBtn").onclick = function () { game.hidden = false; toMenu(); };
   $("gBack").onclick = function () { cleanup(); game.hidden = true; };
@@ -619,6 +686,140 @@ body.waiting .play{animation-play-state:paused}
   $("tOk").onclick = unlock;
   $("tCode").onkeydown = function (e) { if (e.key === "Enter") unlock(); };
   $("tCode").oninput = function () { this.value = this.value.replace(/\D/g, ""); };
+})();
+</script>
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+
+  // ---- Razones: cada toque muestra una distinta (EDITÁ las frases acá) ----
+  var RAZONES = [
+    "Porque con vos hasta el plan mas simple se siente como un plan perfecto.",
+    "Porque me haces sentir valioso incluso cuando me siento un miserable.",
+    "Porque sos la persona con la quiero estar toda mi vida.",
+    "Porque me bancas como soy, con todo y mis bardos.",
+    "Porque con vos no necesito una casa para sentirme seguro.",
+    "Porque tu personalidad no se parece a la de nadie más SOS UNIK<3.",
+    "Porque me hacés querer ser mejor todos los dias.",
+    "Porque cada salida, cada momento o cualquier cosa es mejor con vos.",
+    "Porque un abrazo tuyo es suficiente para olvidarme de las cosas malas.",
+    "Porque te elegiría de nuevo todos los días."
+  ];
+  var order = [], pos = 0, last = -1;
+  function shuffle() {
+    order = RAZONES.map(function (_, i) { return i; });
+    for (var i = order.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1)), t = order[i]; order[i] = order[j]; order[j] = t;
+    }
+    // que la primera de una tanda nunca repita la última de la anterior
+    if (order.length > 1 && order[0] === last) { var k = order[0]; order[0] = order[1]; order[1] = k; }
+    pos = 0;
+  }
+  $("razonBtn").onclick = function () {
+    if (pos >= order.length) shuffle();
+    last = order[pos++];
+    var el = $("razon");
+    el.textContent = RAZONES[last];
+    el.classList.remove("in"); void el.offsetWidth; el.classList.add("in");
+  };
+  shuffle();
+
+  // ---- Carta: se desbloquea con el código que se gana en la batalla naval ----
+  var CARTA_CODE = "6336";
+  var CARTA_IMG = "carta.PNG"; // al lado de index.html
+  window.M16_CARTA_CODE = CARTA_CODE;
+  function cartaOpen() {
+    if ($("cCode").value.trim() === CARTA_CODE) {
+      $("cLock").hidden = true;
+      var v = $("cView");
+      if (!v.firstChild) {
+        var img = document.createElement("img");
+        img.className = "cimg"; img.alt = "Carta"; img.src = CARTA_IMG;
+        img.onerror = function () { img.remove(); var p = document.createElement("p"); p.className = "gmsg"; p.textContent = "No se pudo cargar la carta. Revisá que carta.PNG esté junto a index.html."; v.appendChild(p); };
+        v.appendChild(img);
+      }
+      v.hidden = false;
+    } else {
+      $("cMsg").textContent = "Código incorrecto. Probá de nuevo.";
+      $("cCode").value = ""; $("cCode").focus();
+    }
+  }
+  $("cartaBtn").onclick = function () {
+    $("carta").hidden = false;
+    if ($("cView").hidden) { $("cMsg").textContent = "Ingresá el código para abrir la carta."; $("cCode").value = ""; }
+  };
+  $("cBack").onclick = function () { $("carta").hidden = true; };
+  $("cOk").onclick = cartaOpen;
+  $("cCode").onkeydown = function (e) { if (e.key === "Enter") cartaOpen(); };
+  $("cCode").oninput = function () { this.value = this.value.replace(/\D/g, ""); };
+
+  // ---- Voucher: un código que desbloquea los vouchers (EDITÁ acá) ----
+  var VOU_CODE = "VOU67420";
+  var VOUCHERS = [
+    { texto: "Elegir la próxima serie o película que veamos", valido: "Válido hasta el 10/11/2026" },
+    { texto: "Una rascada de espalda re piola mal", valido: "Válido hasta el 10/11/2026" },
+    { texto: "Ser el amor de mi vida", valido: "Válido de por vida ♥", forever: true }
+  ];
+  var vBuilt = false;
+  function vouOpen() {
+    if ($("vCode").value.trim().toUpperCase() === VOU_CODE) {
+      $("vLock").hidden = true;
+      var l = $("vList");
+      if (!vBuilt) {
+        vBuilt = true;
+        VOUCHERS.forEach(function (f, i) {
+          var d = document.createElement("div");
+          d.className = "vch" + (f.forever ? " forever" : "");
+          d.style.setProperty("--dl", (i * 0.18) + "s");
+          var k = document.createElement("span"); k.className = "k"; k.textContent = "Voucher #" + (i + 1);
+          var t = document.createElement("p"); t.className = "t"; t.textContent = f.texto;
+          var v = document.createElement("p"); v.className = "v"; v.textContent = f.valido;
+          d.appendChild(k); d.appendChild(t); d.appendChild(v); l.appendChild(d);
+        });
+      }
+      l.hidden = false;
+    } else {
+      $("vMsg").textContent = "Código incorrecto. Probá de nuevo.";
+      $("vCode").value = ""; $("vCode").focus();
+    }
+  }
+  $("vouBtn").onclick = function () {
+    $("vou").hidden = false;
+    if ($("vList").hidden) { $("vMsg").textContent = "Ingresá tu código."; $("vCode").value = ""; }
+  };
+  $("vBack").onclick = function () { $("vou").hidden = true; };
+  $("vOk").onclick = vouOpen;
+  $("vCode").onkeydown = function (e) { if (e.key === "Enter") vouOpen(); };
+
+  // ---- Lockscreen: usuario y contraseña ----
+  // Se guardan solo los hashes SHA-256 de "usuario:contraseña" (no el texto plano).
+  var USERS = {
+    sugus: "0de2653f059f68c90ad8edb16086ebfca8b53fa6b046d0bf94555317f15b743e",
+    fbri: "5b4ca2d629ad9b759296ff1ef2d250600645ab65f99485d283374245460ee9fe"
+  };
+  function sha256(s) {
+    return crypto.subtle.digest("SHA-256", new TextEncoder().encode(s)).then(function (buf) {
+      return Array.prototype.map.call(new Uint8Array(buf), function (b) { return ("0" + b.toString(16)).slice(-2); }).join("");
+    });
+  }
+  function fail(msg) { $("lErr").textContent = msg; $("lPass").value = ""; $("lPass").focus(); }
+  $("lockForm").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var u = $("lUser").value.trim().toLowerCase(), p = $("lPass").value;
+    if (!u || !p) { fail("Completá usuario y contraseña."); return; }
+    if (!(window.crypto && crypto.subtle)) { fail("Este navegador no puede verificar el acceso. Abrí la página desde el link (https)."); return; }
+    sha256(u + ":" + p).then(function (h) {
+      if (Object.prototype.hasOwnProperty.call(USERS, u) && USERS[u] === h) {
+        window.M16_USER = u;
+        $("lErr").textContent = "";
+        $("lock").classList.add("out");
+        setTimeout(function () { $("lock").remove(); }, 700);
+      } else {
+        fail("Usuario o contraseña incorrectos.");
+      }
+    }, function () { fail("No se pudo verificar. Probá de nuevo."); });
+  });
+  $("lUser").focus();
 })();
 </script>
 </body>
