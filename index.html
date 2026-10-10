@@ -92,15 +92,31 @@ body.waiting .play{animation-play-state:paused}
 #sMenu .gbtn.main{margin-top:8px}
 .join input{width:7em;padding:11px 14px;border:1.5px solid var(--soft);border-radius:12px;background:transparent;color:var(--ink);font:600 18px "Nunito",system-ui,sans-serif;text-align:center;text-transform:uppercase;letter-spacing:.2em}
 .code{margin:.1em 0;color:var(--accent);font:italic 300 clamp(64px,22vw,110px) "Fraunces",Georgia,serif;letter-spacing:.08em;text-shadow:0 0 .4em var(--glow)}
-.board{display:grid;grid-template-columns:repeat(10,1fr);gap:2px;width:min(100%,340px);margin:0 auto}
-.board.small{width:min(72%,240px)}
-.cell{position:relative;aspect-ratio:1;padding:0;border:0;border-radius:4px;background:var(--glow);cursor:pointer}
-.cell.ship{background:var(--soft)}
-.cell.miss::after{content:"";position:absolute;inset:36%;border-radius:50%;background:var(--soft);opacity:.55}
-.cell.hit{background:var(--accent)}
-.cell.sunk{background:var(--ink)}
-.cell.hit::after,.cell.sunk::after{content:"\2715";position:absolute;inset:0;display:grid;place-items:center;color:#fff;font:700 14px/1 "Nunito",system-ui,sans-serif}
 .gbtn:focus-visible,.cell:focus-visible,.play:focus-visible,.back:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.board{position:relative;display:grid;grid-template-columns:repeat(10,1fr);width:min(100%,340px);aspect-ratio:1;margin:0 auto;border-radius:10px;overflow:hidden;background:linear-gradient(180deg,var(--glow),color-mix(in srgb,var(--glow) 55%,transparent));box-shadow:0 0 0 1.5px var(--glow)}
+.board.small{width:min(72%,240px)}
+.cell{position:relative;z-index:2;aspect-ratio:1;padding:0;border:0;background:transparent;box-shadow:inset 0 0 0 .5px rgba(128,128,128,.28);cursor:pointer}
+#pBoard .cell{pointer-events:none}
+.cell.miss::after{content:"";position:absolute;inset:38%;border-radius:50%;background:var(--soft);opacity:.6}
+.cell.hit::after{content:"\2715";position:absolute;inset:16%;display:grid;place-items:center;border-radius:50%;background:var(--accent);color:#fff;font:700 13px/1 "Nunito",system-ui,sans-serif}
+.cell.sunk::after{content:"\2715";position:absolute;inset:0;display:grid;place-items:center;color:#fff;font:700 14px/1 "Nunito",system-ui,sans-serif;text-shadow:0 0 2px #000}
+.sh{position:absolute;z-index:1;--c:var(--soft);transition:left .1s,top .1s;pointer-events:none}
+.sh.mv{pointer-events:auto;touch-action:none;cursor:grab}
+.sh.drag{z-index:3;cursor:grabbing;filter:drop-shadow(0 4px 6px rgba(0,0,0,.35))}
+.sh.bad{--c:#d33}
+.sh.shake{animation:shake .3s}
+.sh i{position:absolute;background:linear-gradient(var(--sheen,180deg),rgba(255,255,255,.28),transparent 45%,rgba(0,0,0,.22)),var(--c);--bow:calc(100% - 90% / var(--len));--t:calc(18% / var(--len))}
+.sh.h i{inset:12% 2%;clip-path:polygon(0 25%,var(--t) 0,var(--bow) 0,100% 50%,var(--bow) 100%,var(--t) 100%,0 75%)}
+.sh.v i{inset:2% 12%;--sheen:90deg;clip-path:polygon(25% 0,75% 0,100% var(--t),100% var(--bow),50% 100%,0 var(--bow),0 var(--t))}
+.sh b{position:absolute;border-radius:3px;background:rgba(255,255,255,.6)}
+.sh.h b{left:30%;top:32%;width:calc(100% / var(--len) * 1.1);height:36%}
+.sh.v b{top:30%;left:32%;height:calc(100% / var(--len) * 1.1);width:36%}
+.t1{--c:color-mix(in srgb,var(--soft) 80%,var(--accent))}
+.t2{--c:color-mix(in srgb,var(--soft) 60%,var(--accent))}
+.t3{--c:color-mix(in srgb,var(--soft) 40%,var(--accent))}
+.t4{--c:color-mix(in srgb,var(--soft) 20%,var(--accent))}
+.sunkship{--c:var(--ink)}
+@keyframes shake{25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
 </style>
 </head>
 <body class="waiting">
@@ -137,7 +153,7 @@ body.waiting .play{animation-play-state:paused}
     <section id="sLobby" hidden><p class="code" id="gShow"></p><p class="lbl">Pasale este código a la otra persona.</p></section>
     <section id="sPlace" hidden>
       <div class="board" id="pBoard"></div>
-      <div class="row"><button class="gbtn" id="gRot" type="button">Girar</button><button class="gbtn" id="gRand" type="button">Aleatorio</button><button class="gbtn" id="gUndo" type="button">Deshacer</button></div>
+      <div class="row"><button class="gbtn" id="gRand" type="button">Aleatorio</button></div>
       <button class="gbtn main" id="gReady" type="button" disabled>Listo</button>
     </section>
     <section id="sBattle" hidden>
@@ -256,7 +272,7 @@ body.waiting .play{animation-play-state:paused}
   var N = 10, FLEET = [5, 4, 3, 3, 2], ALPHA = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   var game = $("game"), msg = $("gMsg"), SECTIONS = ["sMenu", "sLobby", "sPlace", "sBattle"];
   var peer = null, conn = null, isHost = false;
-  var my, ships, shotsAtMe, enemy, horiz, locked, myReady, enReady, myTurn, over;
+  var my, ships, shotsAtMe, enemy, locked, myReady, enReady, myTurn, over;
   var rand = function (k) { return Math.floor(Math.random() * k); };
   var mk = function (v) { var a = []; for (var i = 0; i < N; i++) { a.push([]); for (var j = 0; j < N; j++) a[i].push(v); } return a; };
   function show(id) { SECTIONS.forEach(function (s) { $(s).hidden = (s !== id); }); }
@@ -274,72 +290,121 @@ body.waiting .play{animation-play-state:paused}
     el.onclick = function (e) { var b = e.target.closest(".cell"); if (b && tap) tap(+b.dataset.r, +b.dataset.c); };
   }
   function paint(id, fn) {
-    var cells = $(id).children;
+    var cells = $(id).querySelectorAll(".cell");
     for (var i = 0; i < cells.length; i++) cells[i].className = "cell " + fn(Math.floor(i / N), i % N);
   }
-  function pPaint() { paint("pBoard", function (r, c) { return my[r][c] >= 0 ? "ship" : ""; }); }
-  function oPaint() { paint("oBoard", function (r, c) { var h = shotsAtMe[r][c]; return my[r][c] >= 0 ? (h ? "hit" : "ship") : (h ? "miss" : ""); }); }
+  function oPaint() { paint("oBoard", function (r, c) { return shotsAtMe[r][c] ? (my[r][c] >= 0 ? "hit" : "miss") : ""; }); }
   function ePaint() { paint("eBoard", function (r, c) { return ["", "miss", "hit", "sunk"][enemy[r][c]]; }); }
 
-  // ---- Colocar barcos ----
-  function fits(len, r, c, h) {
-    for (var i = 0; i < len; i++) {
+  // ---- Barcos: dibujo, colocación y movimiento ----
+  var clamp = function (v, lo, hi) { return Math.max(lo, Math.min(hi, v)); };
+  function place(el, len, r, c, h) {
+    var st = el.style;
+    el.classList.toggle("h", h); el.classList.toggle("v", !h);
+    st.left = c * 100 / N + "%"; st.top = r * 100 / N + "%";
+    st.width = (h ? len * 100 / N : 100 / N) + "%"; st.height = (h ? 100 / N : len * 100 / N) + "%";
+  }
+  function shipEl(board, len, t, cls) {
+    var el = document.createElement("div");
+    el.className = "sh t" + t + (cls ? " " + cls : "");
+    el.style.setProperty("--len", len); el.innerHTML = "<i></i><b></b>";
+    board.appendChild(el); return el;
+  }
+  function recompute() {
+    my = mk(-1);
+    ships.forEach(function (s, i) {
+      s.cells = [];
+      for (var k = 0; k < s.len; k++) { var p = [s.r + (s.h ? 0 : k), s.c + (s.h ? k : 0)]; s.cells.push(p); my[p[0]][p[1]] = i; }
+    });
+  }
+  function free(s, r, c, h) {
+    for (var i = 0; i < s.len; i++) {
       var rr = r + (h ? 0 : i), cc = c + (h ? i : 0);
-      if (rr >= N || cc >= N || my[rr][cc] >= 0) return false;
+      if (rr < 0 || cc < 0 || rr >= N || cc >= N) return false;
+      var k = my[rr][cc]; if (k >= 0 && ships[k] !== s) return false;
     }
     return true;
   }
+  function rotate(s, tr, tc) {
+    var k = clamp(s.h ? tc - s.c : tr - s.r, 0, s.len - 1), nh = !s.h;
+    var base = nh ? [tr - k, tc] : [tr, tc - k];
+    var tries = [base, [s.r, s.c], [clamp(base[0], 0, N - (nh ? 1 : s.len)), clamp(base[1], 0, N - (nh ? s.len : 1))]];
+    for (var i = 0; i < tries.length; i++) {
+      if (free(s, tries[i][0], tries[i][1], nh)) { s.r = tries[i][0]; s.c = tries[i][1]; s.h = nh; recompute(); place(s.el, s.len, s.r, s.c, nh); return; }
+    }
+    s.el.classList.add("shake"); setTimeout(function () { s.el.classList.remove("shake"); }, 350);
+    say("No hay lugar para girarlo ahí.");
+    setTimeout(function () { if (!$("sPlace").hidden) refresh(); }, 1800);
+  }
+  function bind(s) {
+    var el = s.el;
+    el.addEventListener("pointerdown", function (e) {
+      if (locked) return;
+      e.preventDefault();
+      try { el.setPointerCapture(e.pointerId); } catch (x) {}
+      var rc = $("pBoard").getBoundingClientRect(), cs = rc.width / N;
+      var gr = Math.floor((e.clientY - rc.top) / cs), gc = Math.floor((e.clientX - rc.left) / cs);
+      s.drag = { x: e.clientX, y: e.clientY, moved: false, rc: rc, cs: cs, tr: gr, tc: gc, grab: clamp(s.h ? gc - s.c : gr - s.r, 0, s.len - 1) };
+      el.classList.add("drag");
+    });
+    el.addEventListener("pointermove", function (e) {
+      var d = s.drag; if (!d) return;
+      if (!d.moved && Math.abs(e.clientX - d.x) + Math.abs(e.clientY - d.y) < 8) return;
+      d.moved = true;
+      var gr = Math.floor((e.clientY - d.rc.top) / d.cs), gc = Math.floor((e.clientX - d.rc.left) / d.cs);
+      d.nr = clamp(s.h ? gr : gr - d.grab, 0, N - (s.h ? 1 : s.len));
+      d.nc = clamp(s.h ? gc - d.grab : gc, 0, N - (s.h ? s.len : 1));
+      d.ok = free(s, d.nr, d.nc, s.h);
+      place(el, s.len, d.nr, d.nc, s.h); el.classList.toggle("bad", !d.ok);
+    });
+    function up(e) {
+      var d = s.drag; if (!d) return; s.drag = null;
+      el.classList.remove("drag", "bad");
+      var ok = e.type === "pointerup";
+      if (ok && !d.moved) { rotate(s, d.tr, d.tc); return; }
+      if (ok && d.ok) { s.r = d.nr; s.c = d.nc; recompute(); }
+      place(el, s.len, s.r, s.c, s.h);
+    }
+    el.addEventListener("pointerup", up); el.addEventListener("pointercancel", up);
+  }
   function addShip(len, r, c, h) {
-    var cells = [];
-    for (var i = 0; i < len; i++) { var rr = r + (h ? 0 : i), cc = c + (h ? i : 0); my[rr][cc] = ships.length; cells.push([rr, cc]); }
-    ships.push({ cells: cells, hits: 0 });
+    var s = { len: len, r: r, c: c, h: h, hits: 0, t: ships.length };
+    s.el = shipEl($("pBoard"), len, s.t, "mv"); ships.push(s);
+    recompute(); place(s.el, len, r, c, h); bind(s);
   }
   function refresh() {
-    pPaint();
-    var done = ships.length === FLEET.length;
-    $("gReady").disabled = !done || locked;
-    say(locked ? "Esperando a que la otra persona termine…" :
-        done ? "Flota lista. Tocá Listo cuando quieras." :
-        "Tocá el tablero para colocar el barco de " + FLEET[ships.length] + " casillas (" + (horiz ? "horizontal" : "vertical") + ").");
-  }
-  function tapPlace(r, c) {
-    if (locked || ships.length >= FLEET.length) return;
-    var len = FLEET[ships.length];
-    if (!fits(len, r, c, horiz)) { say("Ahí no entra. Probá otro lugar o girá el barco."); return; }
-    addShip(len, r, c, horiz); refresh();
+    $("gReady").disabled = locked;
+    say(locked ? "Esperando a que la otra persona termine…" : "Arrastrá los barcos para moverlos. Tocá uno para girarlo.");
   }
   function randomize() {
     if (locked) return;
-    my = mk(-1); ships = [];
+    ships = []; my = mk(-1); build("pBoard", null);
     FLEET.forEach(function (len) {
-      for (var t = 0; t < 1000; t++) { var h = Math.random() < .5, r = rand(N), c = rand(N); if (fits(len, r, c, h)) { addShip(len, r, c, h); break; } }
+      for (var t = 0; t < 1000; t++) {
+        var h = Math.random() < .5, r = rand(N), c = rand(N);
+        if (free({ len: len }, r, c, h)) { addShip(len, r, c, h); break; }
+      }
     });
     refresh();
   }
-  function undo() {
-    if (locked) return;
-    var s = ships.pop();
-    if (s) s.cells.forEach(function (p) { my[p[0]][p[1]] = -1; });
-    refresh();
+  function drawOwn() {
+    ships.forEach(function (s) { s.el2 = shipEl($("oBoard"), s.len, s.t, ""); place(s.el2, s.len, s.r, s.c, s.h); });
   }
   function startPlacement() {
-    my = mk(-1); ships = []; shotsAtMe = mk(false); enemy = mk(0);
-    horiz = true; locked = false; myReady = false; enReady = false; myTurn = false; over = false;
+    shotsAtMe = mk(false); enemy = mk(0);
+    locked = false; myReady = false; enReady = false; myTurn = false; over = false;
     $("sEnd").hidden = true;
-    build("pBoard", tapPlace); build("eBoard", shoot); build("oBoard", null);
-    show("sPlace"); refresh();
+    build("eBoard", shoot); build("oBoard", null);
+    show("sPlace"); randomize();
   }
-  function ready() {
-    if (locked || ships.length !== FLEET.length) return;
-    locked = true; myReady = true; send({ t: "ready" }); refresh(); maybeStart();
-  }
+  function ready() { if (locked) return; locked = true; myReady = true; send({ t: "ready" }); refresh(); maybeStart(); }
 
   // ---- Batalla ----
   function maybeStart() {
     if (isHost && myReady && enReady) { var hf = Math.random() < .5; send({ t: "start", hostFirst: hf }); begin(hf); }
   }
   function begin(first) {
-    myTurn = first; show("sBattle"); ePaint(); oPaint();
+    myTurn = first; show("sBattle"); drawOwn(); ePaint(); oPaint();
     say(first ? "Empezás vos. Tocá el tablero de arriba." : "Empieza la otra persona…");
   }
   function shoot(r, c) {
@@ -361,7 +426,7 @@ body.waiting .play{animation-play-state:paused}
       shotsAtMe[m.r][m.c] = true;
       if (hit) {
         var s = ships[idx]; s.hits++;
-        if (s.hits === s.cells.length) { sunk = s.cells; lost = ships.every(function (x) { return x.hits === x.cells.length; }); }
+        if (s.hits === s.cells.length) { sunk = s.cells; if (s.el2) s.el2.classList.add("sunkship"); lost = ships.every(function (x) { return x.hits === x.cells.length; }); }
       }
       send({ t: "res", r: m.r, c: m.c, hit: hit, sunk: sunk, lost: lost });
       oPaint();
@@ -369,7 +434,11 @@ body.waiting .play{animation-play-state:paused}
       else { myTurn = true; say((hit ? (sunk ? "Te hundieron un barco. " : "Te tocaron un barco. ") : "Falló. ") + "Tu turno."); }
     } else if (m.t === "res") {
       enemy[m.r][m.c] = m.hit ? 2 : 1;
-      if (m.sunk) m.sunk.forEach(function (p) { enemy[p[0]][p[1]] = 3; });
+      if (m.sunk) {
+        m.sunk.forEach(function (p) { enemy[p[0]][p[1]] = 3; });
+        var q = m.sunk, qh = q.length > 1 ? q[0][0] === q[1][0] : true, qe = shipEl($("eBoard"), q.length, 0, "sunkship");
+        place(qe, q.length, q[0][0], q[0][1], qh);
+      }
       ePaint();
       if (m.lost) end(true);
       else say((m.hit ? (m.sunk ? "¡Hundiste un barco! " : "¡Tocado! ") : "Agua. ") + "Turno de la otra persona…");
@@ -433,8 +502,7 @@ body.waiting .play{animation-play-state:paused}
   $("gBack").onclick = function () { cleanup(); game.hidden = true; };
   $("gCreate").onclick = create; $("gJoin").onclick = join;
   $("gCode").onkeydown = function (e) { if (e.key === "Enter") join(); };
-  $("gRot").onclick = function () { if (!locked) { horiz = !horiz; refresh(); } };
-  $("gRand").onclick = randomize; $("gUndo").onclick = undo; $("gReady").onclick = ready;
+    $("gRand").onclick = randomize; $("gReady").onclick = ready;
   $("gAgain").onclick = function () { send({ t: "again" }); startPlacement(); };
 })();
 </script>
