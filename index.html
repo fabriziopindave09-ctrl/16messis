@@ -66,9 +66,51 @@ main{position:relative;text-align:center;padding:24px 16px;width:100%;max-width:
 @keyframes beat{0%,40%,100%{transform:scale(1)}12%{transform:scale(1.16)}26%{transform:scale(1.06)}}
 @keyframes pop{to{transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) rotate(var(--r)) scale(.4);opacity:0}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important}}
+.intro{position:fixed;inset:0;z-index:10;display:grid;place-items:center;background:var(--bg);transition:opacity .9s ease}
+.intro::before{content:"";position:absolute;inset:0;background:radial-gradient(60% 45% at 50% 36%,var(--glow),transparent 72%)}
+.intro.out{opacity:0;pointer-events:none}
+.stage{position:absolute;inset:0;display:grid;place-items:center;opacity:0;transition:opacity .5s;pointer-events:none}
+.stage.on{opacity:1}
+.stage iframe{width:min(100vw,calc(100vh*16/9));height:min(100vh,calc(100vw*9/16));border:0;filter:url(#chroma)}
+.start{position:relative;z-index:2;background:none;border:0;cursor:pointer;color:var(--ink);font:italic 300 clamp(22px,5.5vw,30px) "Fraunces",Georgia,serif;text-align:center;padding:24px}
+.start .h{display:block;font-size:64px;line-height:1;color:var(--accent);margin-bottom:.3em;text-shadow:0 0 .5em var(--glow);animation:beat 1s ease-in-out infinite}
+.skip{position:absolute;z-index:3;right:calc(16px + env(safe-area-inset-right,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));background:none;border:0;color:var(--soft);font:600 14px "Nunito",system-ui,sans-serif;padding:10px;cursor:pointer}
+.start:focus-visible,.skip:focus-visible{outline:2px solid var(--accent);outline-offset:4px;border-radius:8px}
+body.waiting .big,body.waiting .rest,body.waiting .since,body.waiting .sign,body.waiting .hint{animation-play-state:paused}
+.play{margin:1.8em 0 0;background:none;border:1.5px solid var(--accent);color:var(--accent);border-radius:999px;padding:12px 24px;font:600 16px "Nunito",system-ui,sans-serif;cursor:pointer;animation:fade 1s 1.8s both}
+body.waiting .play{animation-play-state:paused}
+.game{position:fixed;inset:0;z-index:8;overflow-y:auto;background:var(--bg);color:var(--ink);text-align:center;padding:calc(56px + env(safe-area-inset-top,0px)) 16px calc(28px + env(safe-area-inset-bottom,0px))}
+.back{position:fixed;z-index:9;top:calc(12px + env(safe-area-inset-top,0px));left:12px;background:none;border:0;color:var(--soft);font:600 15px "Nunito",system-ui,sans-serif;padding:10px;cursor:pointer}
+.gwrap{max-width:420px;margin:0 auto}
+.gtitle{margin:0 0 .2em;font:italic 300 clamp(30px,8vw,42px) "Fraunces",Georgia,serif}
+.gmsg{min-height:3em;margin:0 0 .8em;color:var(--soft);font-size:16px;line-height:1.5}
+.lbl{margin:1.2em 0 .5em;color:var(--soft);font-size:14px}
+.gbtn{background:none;border:1.5px solid var(--accent);color:var(--accent);border-radius:999px;padding:11px 20px;font:600 15px "Nunito",system-ui,sans-serif;cursor:pointer}
+.gbtn.main{background:var(--accent);color:var(--bg)}
+.gbtn:disabled{opacity:.4;cursor:default}
+.join,.row{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:14px 0}
+#sMenu .gbtn.main{margin-top:8px}
+.join input{width:7em;padding:11px 14px;border:1.5px solid var(--soft);border-radius:12px;background:transparent;color:var(--ink);font:600 18px "Nunito",system-ui,sans-serif;text-align:center;text-transform:uppercase;letter-spacing:.2em}
+.code{margin:.1em 0;color:var(--accent);font:italic 300 clamp(64px,22vw,110px) "Fraunces",Georgia,serif;letter-spacing:.08em;text-shadow:0 0 .4em var(--glow)}
+.board{display:grid;grid-template-columns:repeat(10,1fr);gap:2px;width:min(100%,340px);margin:0 auto}
+.board.small{width:min(72%,240px)}
+.cell{position:relative;aspect-ratio:1;padding:0;border:0;border-radius:4px;background:var(--glow);cursor:pointer}
+.cell.ship{background:var(--soft)}
+.cell.miss::after{content:"";position:absolute;inset:36%;border-radius:50%;background:var(--soft);opacity:.55}
+.cell.hit{background:var(--accent)}
+.cell.sunk{background:var(--ink)}
+.cell.hit::after,.cell.sunk::after{content:"\2715";position:absolute;inset:0;display:grid;place-items:center;color:#fff;font:700 14px/1 "Nunito",system-ui,sans-serif}
+.gbtn:focus-visible,.cell:focus-visible,.play:focus-visible,.back:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
 </style>
 </head>
-<body>
+<body class="waiting">
+<!-- Filtro chroma key: el verde pasa a transparente. Ajustá la última fila (3.5 = dureza, 1 = tolerancia) si hace falta -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><filter id="chroma" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  3.5 -3.5 3.5 0 1"/></filter></svg>
+<div class="intro" id="intro">
+  <div class="stage" id="stage"><div id="yt"></div></div>
+  <button class="start" id="start" type="button"><span class="h">&#9829;</span>Tocá para abrir</button>
+  <button class="skip" id="skip" type="button" hidden>Saltar</button>
+</div>
 <main>
   <p class="lead" id="lead">Llevamos juntos</p>
   <h1 class="big"><span id="m">16</span><span class="u" id="mu">meses</span></h1>
@@ -78,10 +120,33 @@ main{position:relative;text-align:center;padding:24px 16px;width:100%;max-width:
     <li><b id="mi">00</b><span>minutos</span></li>
     <li class="beat"><b id="s">00</b><span>segundos</span></li>
   </ul>
-  <p class="since">Desde el <span id="since"></span><br><span id="total"></span> días en total, y los que vienen.</p>
-  <p class="sign">Gracias por cada uno.</p>
+  <p class="since">Desde el <span id="since"></span><br><span id="total"></span> días en total.</p>
+  <p class="sign">Gracias por cada uno Panchito.</p>
+  <button class="play" id="playBtn" type="button">Jugar batalla naval</button>
   <p class="hint">Tocá la pantalla.</p>
 </main>
+<div class="game" id="game" hidden>
+  <button class="back" id="gBack" type="button">&larr; Volver</button>
+  <div class="gwrap">
+    <h2 class="gtitle">Batalla naval</h2>
+    <p class="gmsg" id="gMsg" aria-live="polite"></p>
+    <section id="sMenu">
+      <button class="gbtn main" id="gCreate" type="button">Crear partida</button>
+      <div class="join"><input id="gCode" maxlength="4" placeholder="Código" autocomplete="off" autocapitalize="characters" aria-label="Código de la partida"><button class="gbtn" id="gJoin" type="button">Unirme</button></div>
+    </section>
+    <section id="sLobby" hidden><p class="code" id="gShow"></p><p class="lbl">Pasale este código a la otra persona.</p></section>
+    <section id="sPlace" hidden>
+      <div class="board" id="pBoard"></div>
+      <div class="row"><button class="gbtn" id="gRot" type="button">Girar</button><button class="gbtn" id="gRand" type="button">Aleatorio</button><button class="gbtn" id="gUndo" type="button">Deshacer</button></div>
+      <button class="gbtn main" id="gReady" type="button" disabled>Listo</button>
+    </section>
+    <section id="sBattle" hidden>
+      <p class="lbl">Su flota</p><div class="board" id="eBoard"></div>
+      <p class="lbl">Tu flota</p><div class="board small" id="oBoard"></div>
+    </section>
+    <section id="sEnd" hidden><div class="row"><button class="gbtn main" id="gAgain" type="button">Jugar de nuevo</button></div></section>
+  </div>
+</div>
 <script>
 (function () {
   // Fecha de inicio: 10 de junio de 2025
@@ -138,6 +203,239 @@ main{position:relative;text-align:center;padding:24px 16px;width:100%;max-width:
       }
     });
   }
+})();
+</script>
+<script>
+(function () {
+  var VIDEO_ID = "Cs-IoT2lERQ";
+  var intro = document.getElementById("intro"), stage = document.getElementById("stage");
+  var start = document.getElementById("start"), skip = document.getElementById("skip");
+  var player = null, ready = false, wantPlay = false, done = false, failed = false;
+
+  function finish() {
+    if (done) return; done = true;
+    stage.classList.remove("on");
+    intro.classList.add("out");
+    document.body.classList.remove("waiting");
+    setTimeout(function () { try { if (player) player.destroy(); } catch (e) {} intro.remove(); }, 1000);
+  }
+  function play() {
+    try { player.unMute(); player.setVolume(100); player.playVideo(); } catch (e) { finish(); }
+  }
+  start.addEventListener("click", function () {
+    if (failed) { finish(); return; }
+    start.hidden = true; skip.hidden = false; wantPlay = true;
+    if (ready) play(); else setTimeout(function () { if (!ready) finish(); }, 8000);
+  });
+  skip.addEventListener("click", finish);
+
+  window.onYouTubeIframeAPIReady = function () {
+    player = new YT.Player("yt", {
+      videoId: VIDEO_ID,
+      playerVars: { controls: 0, disablekb: 1, fs: 0, modestbranding: 1, rel: 0, iv_load_policy: 3, playsinline: 1 },
+      events: {
+        onReady: function () { ready = true; if (wantPlay) play(); },
+        onStateChange: function (e) {
+          // el video solo se ve mientras reproduce (oculta spinner y menús de YouTube)
+          if (e.data === 1) stage.classList.add("on"); else stage.classList.remove("on");
+          if (e.data === 0) finish();
+        },
+        onError: finish
+      }
+    });
+  };
+  var tag = document.createElement("script");
+  tag.src = "https://www.youtube.com/iframe_api"; tag.async = true;
+  tag.onerror = function () { failed = true; };
+  document.head.appendChild(tag);
+})();
+</script>
+<script>
+(function () {
+  var $ = function (i) { return document.getElementById(i); };
+  var N = 10, FLEET = [5, 4, 3, 3, 2], ALPHA = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  var game = $("game"), msg = $("gMsg"), SECTIONS = ["sMenu", "sLobby", "sPlace", "sBattle"];
+  var peer = null, conn = null, isHost = false;
+  var my, ships, shotsAtMe, enemy, horiz, locked, myReady, enReady, myTurn, over;
+  var rand = function (k) { return Math.floor(Math.random() * k); };
+  var mk = function (v) { var a = []; for (var i = 0; i < N; i++) { a.push([]); for (var j = 0; j < N; j++) a[i].push(v); } return a; };
+  function show(id) { SECTIONS.forEach(function (s) { $(s).hidden = (s !== id); }); }
+  function say(t) { msg.textContent = t || ""; }
+  function send(o) { try { if (conn && conn.open) conn.send(o); } catch (e) {} }
+
+  function build(id, tap) {
+    var el = $(id); el.innerHTML = "";
+    for (var r = 0; r < N; r++) for (var c = 0; c < N; c++) {
+      var b = document.createElement("button");
+      b.type = "button"; b.className = "cell"; b.dataset.r = r; b.dataset.c = c;
+      b.setAttribute("aria-label", "ABCDEFGHIJ".charAt(c) + (r + 1));
+      el.appendChild(b);
+    }
+    el.onclick = function (e) { var b = e.target.closest(".cell"); if (b && tap) tap(+b.dataset.r, +b.dataset.c); };
+  }
+  function paint(id, fn) {
+    var cells = $(id).children;
+    for (var i = 0; i < cells.length; i++) cells[i].className = "cell " + fn(Math.floor(i / N), i % N);
+  }
+  function pPaint() { paint("pBoard", function (r, c) { return my[r][c] >= 0 ? "ship" : ""; }); }
+  function oPaint() { paint("oBoard", function (r, c) { var h = shotsAtMe[r][c]; return my[r][c] >= 0 ? (h ? "hit" : "ship") : (h ? "miss" : ""); }); }
+  function ePaint() { paint("eBoard", function (r, c) { return ["", "miss", "hit", "sunk"][enemy[r][c]]; }); }
+
+  // ---- Colocar barcos ----
+  function fits(len, r, c, h) {
+    for (var i = 0; i < len; i++) {
+      var rr = r + (h ? 0 : i), cc = c + (h ? i : 0);
+      if (rr >= N || cc >= N || my[rr][cc] >= 0) return false;
+    }
+    return true;
+  }
+  function addShip(len, r, c, h) {
+    var cells = [];
+    for (var i = 0; i < len; i++) { var rr = r + (h ? 0 : i), cc = c + (h ? i : 0); my[rr][cc] = ships.length; cells.push([rr, cc]); }
+    ships.push({ cells: cells, hits: 0 });
+  }
+  function refresh() {
+    pPaint();
+    var done = ships.length === FLEET.length;
+    $("gReady").disabled = !done || locked;
+    say(locked ? "Esperando a que la otra persona termine…" :
+        done ? "Flota lista. Tocá Listo cuando quieras." :
+        "Tocá el tablero para colocar el barco de " + FLEET[ships.length] + " casillas (" + (horiz ? "horizontal" : "vertical") + ").");
+  }
+  function tapPlace(r, c) {
+    if (locked || ships.length >= FLEET.length) return;
+    var len = FLEET[ships.length];
+    if (!fits(len, r, c, horiz)) { say("Ahí no entra. Probá otro lugar o girá el barco."); return; }
+    addShip(len, r, c, horiz); refresh();
+  }
+  function randomize() {
+    if (locked) return;
+    my = mk(-1); ships = [];
+    FLEET.forEach(function (len) {
+      for (var t = 0; t < 1000; t++) { var h = Math.random() < .5, r = rand(N), c = rand(N); if (fits(len, r, c, h)) { addShip(len, r, c, h); break; } }
+    });
+    refresh();
+  }
+  function undo() {
+    if (locked) return;
+    var s = ships.pop();
+    if (s) s.cells.forEach(function (p) { my[p[0]][p[1]] = -1; });
+    refresh();
+  }
+  function startPlacement() {
+    my = mk(-1); ships = []; shotsAtMe = mk(false); enemy = mk(0);
+    horiz = true; locked = false; myReady = false; enReady = false; myTurn = false; over = false;
+    $("sEnd").hidden = true;
+    build("pBoard", tapPlace); build("eBoard", shoot); build("oBoard", null);
+    show("sPlace"); refresh();
+  }
+  function ready() {
+    if (locked || ships.length !== FLEET.length) return;
+    locked = true; myReady = true; send({ t: "ready" }); refresh(); maybeStart();
+  }
+
+  // ---- Batalla ----
+  function maybeStart() {
+    if (isHost && myReady && enReady) { var hf = Math.random() < .5; send({ t: "start", hostFirst: hf }); begin(hf); }
+  }
+  function begin(first) {
+    myTurn = first; show("sBattle"); ePaint(); oPaint();
+    say(first ? "Empezás vos. Tocá el tablero de arriba." : "Empieza la otra persona…");
+  }
+  function shoot(r, c) {
+    if (!myTurn || over || enemy[r][c]) return;
+    myTurn = false; send({ t: "shot", r: r, c: c }); say("Disparo…");
+  }
+  function end(win) {
+    over = true; myTurn = false;
+    say(win ? "¡Ganaste! ♥" : "Esta vez ganó la otra persona. ¡Revancha!");
+    $("sEnd").hidden = false;
+  }
+  function onData(m) {
+    if (!m || !m.t) return;
+    if (m.t === "ready") { enReady = true; maybeStart(); }
+    else if (m.t === "start") { begin(!m.hostFirst); }
+    else if (m.t === "shot") {
+      if (!(m.r >= 0 && m.r < N && m.c >= 0 && m.c < N) || !my) return;
+      var idx = my[m.r][m.c], hit = idx >= 0, sunk = null, lost = false;
+      shotsAtMe[m.r][m.c] = true;
+      if (hit) {
+        var s = ships[idx]; s.hits++;
+        if (s.hits === s.cells.length) { sunk = s.cells; lost = ships.every(function (x) { return x.hits === x.cells.length; }); }
+      }
+      send({ t: "res", r: m.r, c: m.c, hit: hit, sunk: sunk, lost: lost });
+      oPaint();
+      if (lost) end(false);
+      else { myTurn = true; say((hit ? (sunk ? "Te hundieron un barco. " : "Te tocaron un barco. ") : "Falló. ") + "Tu turno."); }
+    } else if (m.t === "res") {
+      enemy[m.r][m.c] = m.hit ? 2 : 1;
+      if (m.sunk) m.sunk.forEach(function (p) { enemy[p[0]][p[1]] = 3; });
+      ePaint();
+      if (m.lost) end(true);
+      else say((m.hit ? (m.sunk ? "¡Hundiste un barco! " : "¡Tocado! ") : "Agua. ") + "Turno de la otra persona…");
+    } else if (m.t === "again") { startPlacement(); }
+  }
+
+  // ---- Conexión (PeerJS: solo el primer contacto pasa por su servicio) ----
+  function cleanup() {
+    var c = conn, p = peer; conn = null; peer = null;
+    try { if (c) c.close(); } catch (e) {}
+    try { if (p) p.destroy(); } catch (e) {}
+  }
+  function toMenu(keep) { cleanup(); show("sMenu"); $("sEnd").hidden = true; if (!keep) say(""); }
+  function fail(e) {
+    var t = e && e.type, m = "No se pudo conectar. Probá de nuevo.";
+    if (t === "peer-unavailable") m = "No encontré esa partida. Revisá el código.";
+    else if (t === "network" || t === "server-error" || t === "socket-error" || t === "socket-closed") m = "No se pudo conectar con el servicio. Revisá tu internet y probá de nuevo.";
+    toMenu(true); say(m);
+  }
+  function loadPeer(cb) {
+    if (window.Peer) return cb();
+    var s = document.createElement("script");
+    s.src = "https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js";
+    s.onload = cb;
+    s.onerror = function () { say("No se pudo cargar el juego. Revisá tu internet."); };
+    document.head.appendChild(s);
+  }
+  function setupConn(c) {
+    conn = c;
+    c.on("open", function () { say(""); startPlacement(); });
+    c.on("data", onData);
+    c.on("close", function () {
+      if (c !== conn) return;
+      var was = over; toMenu(true); say(was ? "La otra persona salió." : "Se cortó la conexión.");
+    });
+    c.on("error", fail);
+  }
+  function newCode() { var s = ""; for (var i = 0; i < 4; i++) s += ALPHA.charAt(rand(ALPHA.length)); return s; }
+  function create() {
+    say("Creando partida…");
+    loadPeer(function () {
+      var code = newCode(); isHost = true;
+      peer = new Peer("m16-" + code);
+      peer.on("open", function () { $("gShow").textContent = code; show("sLobby"); say("Esperando a la otra persona…"); });
+      peer.on("connection", function (c) { if (conn) { c.close(); return; } setupConn(c); });
+      peer.on("error", function (e) { if (e && e.type === "unavailable-id") { cleanup(); create(); } else fail(e); });
+    });
+  }
+  function join() {
+    var code = $("gCode").value.trim().toUpperCase();
+    if (code.length !== 4) { say("El código tiene 4 letras o números."); return; }
+    say("Conectando…");
+    loadPeer(function () {
+      isHost = false; peer = new Peer();
+      peer.on("open", function () { setupConn(peer.connect("m16-" + code, { reliable: true })); });
+      peer.on("error", fail);
+    });
+  }
+
+  $("playBtn").onclick = function () { game.hidden = false; toMenu(); };
+  $("gBack").onclick = function () { cleanup(); game.hidden = true; };
+  $("gCreate").onclick = create; $("gJoin").onclick = join;
+  $("gCode").onkeydown = function (e) { if (e.key === "Enter") join(); };
+  $("gRot").onclick = function () { if (!locked) { horiz = !horiz; refresh(); } };
+  $("gRand").onclick = randomize; $("gUndo").onclick = undo; $("gReady").onclick = ready;
+  $("gAgain").onclick = function () { send({ t: "again" }); startPlacement(); };
 })();
 </script>
 </body>
