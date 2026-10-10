@@ -117,6 +117,7 @@ body.waiting .play{animation-play-state:paused}
 .t4{--c:color-mix(in srgb,var(--soft) 20%,var(--accent))}
 .sunkship{--c:var(--ink)}
 @keyframes shake{25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+#gName{display:block;margin:0 auto 12px;width:min(100%,260px);padding:11px 14px;border:1.5px solid var(--soft);border-radius:12px;background:transparent;color:var(--ink);font:600 18px "Nunito",system-ui,sans-serif;text-align:center}
 </style>
 </head>
 <body class="waiting">
@@ -147,6 +148,7 @@ body.waiting .play{animation-play-state:paused}
     <h2 class="gtitle">Batalla naval</h2>
     <p class="gmsg" id="gMsg" aria-live="polite"></p>
     <section id="sMenu">
+      <input id="gName" maxlength="14" placeholder="Tu nombre" autocomplete="nickname" aria-label="Tu nombre de jugador">
       <button class="gbtn main" id="gCreate" type="button">Crear partida</button>
       <div class="join"><input id="gCode" maxlength="4" placeholder="Código" autocomplete="off" autocapitalize="characters" aria-label="Código de la partida"><button class="gbtn" id="gJoin" type="button">Unirme</button></div>
     </section>
@@ -157,7 +159,7 @@ body.waiting .play{animation-play-state:paused}
       <button class="gbtn main" id="gReady" type="button" disabled>Listo</button>
     </section>
     <section id="sBattle" hidden>
-      <p class="lbl">Su flota</p><div class="board" id="eBoard"></div>
+      <p class="lbl" id="lblE">Su flota</p><div class="board" id="eBoard"></div>
       <p class="lbl">Tu flota</p><div class="board small" id="oBoard"></div>
     </section>
     <section id="sEnd" hidden><div class="row"><button class="gbtn main" id="gAgain" type="button">Jugar de nuevo</button></div></section>
@@ -272,6 +274,9 @@ body.waiting .play{animation-play-state:paused}
   var N = 10, FLEET = [5, 4, 3, 3, 2], ALPHA = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   var game = $("game"), msg = $("gMsg"), SECTIONS = ["sMenu", "sLobby", "sPlace", "sBattle"];
   var peer = null, conn = null, isHost = false;
+  var FALLBACK = "la otra persona", foe = FALLBACK, myName = "";
+  function cleanName(n) { return String(n || "").replace(/[\u0000-\u001f<>]/g, "").trim().slice(0, 14); }
+  function useName() { myName = cleanName($("gName").value); try { localStorage.setItem("m16name", myName); } catch (e) {} }
   var my, ships, shotsAtMe, enemy, locked, myReady, enReady, myTurn, over;
   var rand = function (k) { return Math.floor(Math.random() * k); };
   var mk = function (v) { var a = []; for (var i = 0; i < N; i++) { a.push([]); for (var j = 0; j < N; j++) a[i].push(v); } return a; };
@@ -374,7 +379,7 @@ body.waiting .play{animation-play-state:paused}
   }
   function refresh() {
     $("gReady").disabled = locked;
-    say(locked ? "Esperando a que la otra persona termine…" : "Arrastrá los barcos para moverlos. Tocá uno para girarlo.");
+    say(locked ? "Esperando a que " + foe + " termine…" : "Arrastrá los barcos para moverlos. Tocá uno para girarlo.");
   }
   function randomize() {
     if (locked) return;
@@ -405,7 +410,8 @@ body.waiting .play{animation-play-state:paused}
   }
   function begin(first) {
     myTurn = first; show("sBattle"); drawOwn(); ePaint(); oPaint();
-    say(first ? "Empezás vos. Tocá el tablero de arriba." : "Empieza la otra persona…");
+    $("lblE").textContent = "Flota de " + foe;
+    say(first ? "Empezás vos. Tocá el tablero de arriba." : "Empieza " + foe + "…");
   }
   function shoot(r, c) {
     if (!myTurn || over || enemy[r][c]) return;
@@ -413,11 +419,12 @@ body.waiting .play{animation-play-state:paused}
   }
   function end(win) {
     over = true; myTurn = false;
-    say(win ? "¡Ganaste! ♥" : "Esta vez ganó la otra persona. ¡Revancha!");
+    say(win ? "¡Ganaste" + (myName ? ", " + myName : "") + "! ♥" : "Esta vez ganó " + foe + ". ¡Revancha!");
     $("sEnd").hidden = false;
   }
   function onData(m) {
     if (!m || !m.t) return;
+    if (m.t === "hello") { foe = cleanName(m.name) || FALLBACK; $("lblE").textContent = "Flota de " + foe; return; }
     if (m.t === "ready") { enReady = true; maybeStart(); }
     else if (m.t === "start") { begin(!m.hostFirst); }
     else if (m.t === "shot") {
@@ -441,13 +448,13 @@ body.waiting .play{animation-play-state:paused}
       }
       ePaint();
       if (m.lost) end(true);
-      else say((m.hit ? (m.sunk ? "¡Hundiste un barco! " : "¡Tocado! ") : "Agua. ") + "Turno de la otra persona…");
+      else say((m.hit ? (m.sunk ? "¡Hundiste un barco! " : "¡Tocado! ") : "Agua. ") + "Turno de " + foe + "…");
     } else if (m.t === "again") { startPlacement(); }
   }
 
   // ---- Conexión (PeerJS: solo el primer contacto pasa por su servicio) ----
   function cleanup() {
-    var c = conn, p = peer; conn = null; peer = null;
+    var c = conn, p = peer; conn = null; peer = null; foe = FALLBACK;
     try { if (c) c.close(); } catch (e) {}
     try { if (p) p.destroy(); } catch (e) {}
   }
@@ -468,16 +475,17 @@ body.waiting .play{animation-play-state:paused}
   }
   function setupConn(c) {
     conn = c;
-    c.on("open", function () { say(""); startPlacement(); });
+    c.on("open", function () { say(""); send({ t: "hello", name: myName }); startPlacement(); });
     c.on("data", onData);
     c.on("close", function () {
       if (c !== conn) return;
-      var was = over; toMenu(true); say(was ? "La otra persona salió." : "Se cortó la conexión.");
+      var was = over, who = foe.charAt(0).toUpperCase() + foe.slice(1); toMenu(true); say(was ? who + " salió." : "Se cortó la conexión.");
     });
     c.on("error", fail);
   }
   function newCode() { var s = ""; for (var i = 0; i < 4; i++) s += ALPHA.charAt(rand(ALPHA.length)); return s; }
   function create() {
+    useName();
     say("Creando partida…");
     loadPeer(function () {
       var code = newCode(); isHost = true;
@@ -490,6 +498,7 @@ body.waiting .play{animation-play-state:paused}
   function join() {
     var code = $("gCode").value.trim().toUpperCase();
     if (code.length !== 4) { say("El código tiene 4 letras o números."); return; }
+    useName();
     say("Conectando…");
     loadPeer(function () {
       isHost = false; peer = new Peer();
@@ -498,6 +507,7 @@ body.waiting .play{animation-play-state:paused}
     });
   }
 
+  try { $("gName").value = localStorage.getItem("m16name") || ""; } catch (e) {}
   $("playBtn").onclick = function () { game.hidden = false; toMenu(); };
   $("gBack").onclick = function () { cleanup(); game.hidden = true; };
   $("gCreate").onclick = create; $("gJoin").onclick = join;
