@@ -118,6 +118,30 @@ body.waiting .play{animation-play-state:paused}
 .sunkship{--c:var(--ink)}
 @keyframes shake{25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
 #gName{display:block;margin:0 auto 12px;width:min(100%,260px);padding:11px 14px;border:1.5px solid var(--soft);border-radius:12px;background:transparent;color:var(--ink);font:600 18px "Nunito",system-ui,sans-serif;text-align:center}
+.acts{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin:1.8em 0 0}
+.acts .play{margin:0}
+.top{position:fixed;inset:0;z-index:8;overflow-y:auto;background:var(--bg);color:var(--ink);text-align:center;padding:calc(56px + env(safe-area-inset-top,0px)) 16px calc(40px + env(safe-area-inset-bottom,0px))}
+.top::before{content:"";position:fixed;inset:0;pointer-events:none;background:radial-gradient(60% 45% at 50% 30%,var(--glow),transparent 72%)}
+.top>*{position:relative}
+.tcode{display:block;margin:14px auto;width:7em;padding:11px 14px;border:1.5px solid var(--soft);border-radius:12px;background:transparent;color:var(--ink);font:600 24px "Nunito",system-ui,sans-serif;text-align:center;letter-spacing:.3em}
+.tcode:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.pgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:28px 18px;max-width:760px;margin:24px auto 0}
+@media (max-width:560px){.pgrid{grid-template-columns:1fr;max-width:340px}}
+.pol{margin:0;background:#fffdf8;color:#3a2a2a;padding:12px 12px 16px;border-radius:3px;box-shadow:0 10px 26px rgba(0,0,0,.28),0 0 0 1px rgba(0,0,0,.05);transform:rotate(var(--rot,0deg));transition:transform .3s;animation:rise .9s var(--dl,0s) cubic-bezier(.2,.7,.2,1) both}
+.pol:hover{transform:rotate(0) scale(1.03)}
+.pol .ph{aspect-ratio:1;background:#f0e4e4;overflow:hidden;display:grid;place-items:center;color:#d6285f;font-size:42px}
+.pol img{width:100%;height:100%;object-fit:cover;display:block}
+.pol .n{margin:10px 0 2px;font:italic 400 13px "Fraunces",Georgia,serif;color:#a07080}
+.pol .c{margin:0;font:italic 400 clamp(16px,4.2vw,19px)/1.35 "Fraunces",Georgia,serif;min-height:2.7em;transition:filter .6s,opacity .6s}
+.pol .ph{position:relative}
+.pol .ph img{transition:filter .7s,transform .7s}
+.pol:not(.open){cursor:pointer;-webkit-tap-highlight-color:transparent}
+.pol:not(.open) .ph img{filter:blur(26px);transform:scale(1.25)}
+.pol:not(.open) .ph::after{content:"\2665";position:absolute;inset:0;display:grid;place-items:center;font-size:60px;color:#fff;text-shadow:0 0 16px rgba(214,40,95,.9);animation:beat 1s ease-in-out infinite}
+.pol .ph.noimg::after{display:none}
+.pol:not(.open) .c{filter:blur(7px);opacity:.45}
+.pol:focus-visible{outline:2px solid var(--accent);outline-offset:4px}
+.thint{margin:18px 0 0;color:var(--soft);font-size:14px}
 </style>
 </head>
 <body class="waiting">
@@ -139,20 +163,36 @@ body.waiting .play{animation-play-state:paused}
   </ul>
   <p class="since">Desde el <span id="since"></span><br><span id="total"></span> días en total.</p>
   <p class="sign">Gracias por cada uno Panchito.</p>
-  <button class="play" id="playBtn" type="button">Jugar batalla naval</button>
+  <div class="acts">
+    <button class="play" id="playBtn" type="button">Jugar batalla naval</button>
+    <button class="play" id="topBtn" type="button">Top 4 &#9829;</button>
+  </div>
   <p class="hint">Tocá la pantalla.</p>
 </main>
+<div class="top" id="top" hidden>
+  <button class="back" id="tBack" type="button">&larr; Volver</button>
+  <div class="gwrap">
+    <h2 class="gtitle"> Top 4 </h2>
+    <section id="tLock">
+      <p class="gmsg" id="tMsg" aria-live="polite">Ingresá el código para verlo.</p>
+      <input class="tcode" id="tCode" maxlength="4" inputmode="numeric" pattern="[0-9]*" autocomplete="off" placeholder="····" aria-label="Código">
+      <button class="gbtn main" id="tOk" type="button">Abrir</button>
+    </section>
+  </div>
+  <p class="thint" id="tHint" hidden>Tocá cada polaroid para descubrirla.</p>
+  <div class="pgrid" id="pgrid" hidden></div>
+</div>
 <div class="game" id="game" hidden>
   <button class="back" id="gBack" type="button">&larr; Volver</button>
   <div class="gwrap">
     <h2 class="gtitle">Batalla naval</h2>
     <p class="gmsg" id="gMsg" aria-live="polite"></p>
     <section id="sMenu">
-      <input id="gName" maxlength="14" placeholder="Tu nombre" autocomplete="nickname" aria-label="Tu nombre de jugador">
+      <input id="gName" maxlength="14" placeholder="usuario" autocomplete="nickname" aria-label="Tu nombre de jugador">
       <button class="gbtn main" id="gCreate" type="button">Crear partida</button>
       <div class="join"><input id="gCode" maxlength="4" placeholder="Código" autocomplete="off" autocapitalize="characters" aria-label="Código de la partida"><button class="gbtn" id="gJoin" type="button">Unirme</button></div>
     </section>
-    <section id="sLobby" hidden><p class="code" id="gShow"></p><p class="lbl">Pasale este código a la otra persona.</p></section>
+    <section id="sLobby" hidden><p class="code" id="gShow"></p><p class="lbl">Pasa este código.</p></section>
     <section id="sPlace" hidden>
       <div class="board" id="pBoard"></div>
       <div class="row"><button class="gbtn" id="gRand" type="button">Aleatorio</button></div>
@@ -508,12 +548,77 @@ body.waiting .play{animation-play-state:paused}
   }
 
   try { $("gName").value = localStorage.getItem("m16name") || ""; } catch (e) {}
+  // La sección "top 4" va en el script siguiente
   $("playBtn").onclick = function () { game.hidden = false; toMenu(); };
   $("gBack").onclick = function () { cleanup(); game.hidden = true; };
   $("gCreate").onclick = create; $("gJoin").onclick = join;
   $("gCode").onkeydown = function (e) { if (e.key === "Enter") join(); };
     $("gRand").onclick = randomize; $("gReady").onclick = ready;
   $("gAgain").onclick = function () { send({ t: "again" }); startPlacement(); };
+})();
+</script>
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var CODE = "1006";
+  // EDITÁ ACÁ: la foto y lo que pensás de cada una.
+  // Las fotos van en una carpeta "fotos" al lado de index.html.
+  var FOTOS = [
+    { src: "1.jpg", titulo: "flex", texto: "Para la foto numero 1 la gorda flexeando su bolso nike, a veces me gustaria sentir que te merezco pero sos una banda miamol." },
+    { src: "2.jpg", titulo: "🦭", texto: "La primera vez que viajaba a mardel a conocer la city, ver al enzo, conocer a los famosos lobos y encima con el amor de mi vida." },
+    { src: "3.jpg", titulo: "Atlas", texto: "Atlas sostiene el mundo... yo sostengo el mio.🌎" },
+    { src: "4.jpg", titulo: "ZipZap", texto: "Cuando mi amor no zipzapeaba con nadie." }
+  ];
+  var ROT = [-3, 2.5, 2, -2.5];
+  var built = false;
+
+  function build() {
+    if (built) return; built = true;
+    var g = $("pgrid");
+    FOTOS.forEach(function (f, i) {
+      var fig = document.createElement("figure");
+      fig.className = "pol";
+      fig.style.setProperty("--rot", ROT[i % ROT.length] + "deg");
+      fig.style.setProperty("--dl", (i * 0.18) + "s");
+      var ph = document.createElement("div"); ph.className = "ph";
+      var img = document.createElement("img");
+      img.alt = "Foto " + (i + 1) + " de nosotros"; img.loading = "lazy"; img.src = f.src;
+      img.onerror = function () { img.remove(); ph.classList.add("noimg"); ph.textContent = "\u2665"; };
+      ph.appendChild(img);
+      var n = document.createElement("p"); n.className = "n"; n.textContent = "#" + (i + 1) + " \u00b7 " + f.titulo;
+      var c = document.createElement("p"); c.className = "c"; c.textContent = f.texto;
+      var cap = document.createElement("figcaption"); cap.appendChild(n); cap.appendChild(c);
+      fig.appendChild(ph); fig.appendChild(cap); g.appendChild(fig);
+
+      // Hay que tocarla para revelarla
+      fig.tabIndex = 0; fig.setAttribute("role", "button");
+      fig.setAttribute("aria-label", "Descubrir la foto #" + (i + 1));
+      function open() {
+        if (fig.classList.contains("open")) return;
+        fig.classList.add("open"); fig.removeAttribute("role"); fig.removeAttribute("aria-label");
+      }
+      fig.addEventListener("click", open);
+      fig.addEventListener("keydown", function (e) {
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(); }
+      });
+    });
+  }
+  function unlock() {
+    if ($("tCode").value.trim() === CODE) {
+      $("tLock").hidden = true; build(); $("pgrid").hidden = false; $("tHint").hidden = false;
+    } else {
+      $("tMsg").textContent = "Código incorrecto. Probá de nuevo.";
+      $("tCode").value = ""; $("tCode").focus();
+    }
+  }
+  $("topBtn").onclick = function () {
+    $("top").hidden = false;
+    if ($("pgrid").hidden) { $("tMsg").textContent = "Ingresá el código para verlo."; $("tCode").value = ""; }
+  };
+  $("tBack").onclick = function () { $("top").hidden = true; };
+  $("tOk").onclick = unlock;
+  $("tCode").onkeydown = function (e) { if (e.key === "Enter") unlock(); };
+  $("tCode").oninput = function () { this.value = this.value.replace(/\D/g, ""); };
 })();
 </script>
 </body>
